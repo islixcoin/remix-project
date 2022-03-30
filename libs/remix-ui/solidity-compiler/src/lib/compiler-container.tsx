@@ -154,8 +154,9 @@ export const CompilerContainer = (props: CompilerContainerProps) => {
   }
 
   const createNewConfigFile = async () => {
-      await api.writeFile(configFilePathInput.current.value, "")
-      setConfigFilePath(configFilePathInput.current.value)
+    const configFileContent =
+    await api.writeFile(configFilePathInput.current.value, "")
+    setConfigFilePath(configFilePathInput.current.value)
   }
   const handleConfigPathChange = async () => {
     if (await api.fileExists(configFilePathInput.current.value))
@@ -164,7 +165,7 @@ export const CompilerContainer = (props: CompilerContainerProps) => {
       modal(
         'New configuration file', 'The file you entered does not exist. Do you want to create a new one?',
         'Create',
-        async () => await createNewConfigFile,
+        async () => await createNewConfigFile(),
         'Cancel',
         () => {}
       )
@@ -543,12 +544,29 @@ export const CompilerContainer = (props: CompilerContainerProps) => {
   return (
     <section>
       <article>
-        <header className='remixui_compilerSection border-bottom'>
-          <div className="pl-0 d-flex remixui_compilerConfig custom-control custom-checkbox" onClick={toggleConfigType}>
-            <input type="radio" value="manual" checked={manualConfig} name="configType" />
-            <label className="font-weight-bold ml-1 remixui_compilerLabel">Compiler Configuration</label>
+        <header className='pt-0 remixui_compilerSection border-bottom'>
+          <div className="d-flex remixui_compilerConfig custom-control custom-checkbox">
+            <input className="custom-control-input" type="checkbox" value="file" onChange={toggleConfigType} checked={!manualConfig} id="sCManualConfig" />
+            <label className="font-weight-bold pt-1 form-check-label custom-control-label remixui_compilerLabel" htmlFor="sCManualConfig">Use configuration file</label>
           </div>
-          <div className={`pt-2 ml-3 flex-column ${manualConfig ? 'd-flex' : 'd-none'}`}>
+          <div className={`pt-2 ml-3 ml-2 align-items-start flex-column ${!manualConfig ? 'd-flex' : 'd-none'}`}>
+            { !showFilePathInput && <span className="py-2 text-primary">{configFilePath}</span> }
+            <input
+              ref={configFilePathInput}
+              className={`py-0 my-0 ${showFilePathInput ? "d-flex" : "d-none"}`}
+              placeholder={"Enter the new path"}
+              title="If the file you entered does not exist you will be able to create one in the next step."
+              onKeyPress={event => {
+                if (event.key === 'Enter') {
+                  handleConfigPathChange()
+                }
+              }}
+            />
+            { !showFilePathInput && <button className="btn-secondary" onClick={() => {setShowFilePathInput(true)}}>Set new config file</button> }
+          </div>
+          <div className={`flex-column ${manualConfig ? 'd-flex' : 'd-none'}`}>
+            <div className="pl-0 d-flex remixui_compilerConfig custom-control custom-checkbox">
+            </div>
             <div className="mb-2">
               <label className="remixui_compilerLabel form-check-label" htmlFor="versionSelector">
                 Compiler
@@ -583,75 +601,63 @@ export const CompilerContainer = (props: CompilerContainerProps) => {
                 {compileTabLogic.evmVersions.map((version, index) => (<option key={index} data-id={state.evmVersion === version ? 'selected' : ''} value={version}>{version}</option>))}
               </select>
             </div>
-            <div className="mt-3">
-              <div className="border-dark pb-3 flex-column">
-                <div className="mt-2 remixui_compilerConfig custom-control custom-checkbox">
-                  <input className="remixui_autocompile custom-control-input" type="checkbox" onChange={handleAutoCompile} data-id="compilerContainerAutoCompile" id="autoCompile" title="Auto compile" checked={state.autoCompile} />
-                  <label className="form-check-label custom-control-label" htmlFor="autoCompile">Auto compile</label>
-                </div>
-                <div className="mt-1 remixui_compilerConfig custom-control custom-checkbox">
-                  <div className="justify-content-between align-items-center d-flex">
-                    <input onChange={(e) => { handleOptimizeChange(e.target.checked) }} className="custom-control-input" id="optimize" type="checkbox" checked={state.optimize} />
-                    <label className="form-check-label custom-control-label" htmlFor="optimize">Enable optimization</label>
-                    <input
-                      min="1"
-                      className="custom-select ml-2 remixui_runs"
-                      id="runs"
-                      placeholder="200"
-                      value={state.runs}
-                      type="number"
-                      title="Estimated number of times each opcode of the deployed code will be executed across the life-time of the contract."
-                      onChange={(e) => onChangeRuns(e.target.value)}
-                      disabled={!state.optimize}
-                    />
-                  </div>
-                </div>
-                <div className="mt-1 remixui_compilerConfig custom-control custom-checkbox">
-                  <input className="remixui_autocompile custom-control-input" onChange={handleHideWarningsChange} id="hideWarningsBox" type="checkbox" title="Hide warnings" checked={state.hideWarnings} />
-                  <label className="form-check-label custom-control-label" htmlFor="hideWarningsBox">Hide warnings</label>
-                </div>
+            <div className="mt-1 mt-3 border-dark pb-3  remixui_compilerConfig custom-control custom-checkbox">
+              <div className="justify-content-between align-items-center d-flex">
+                <input onChange={(e) => { handleOptimizeChange(e.target.checked) }} className="custom-control-input" id="optimize" type="checkbox" checked={state.optimize} />
+                <label className="form-check-label custom-control-label" htmlFor="optimize">Enable optimization</label>
+                <input
+                  min="1"
+                  className="custom-select ml-2 remixui_runs"
+                  id="runs"
+                  placeholder="200"
+                  value={state.runs}
+                  type="number"
+                  title="Estimated number of times each opcode of the deployed code will be executed across the life-time of the contract."
+                  onChange={(e) => onChangeRuns(e.target.value)}
+                  disabled={!state.optimize}
+                />
               </div>
             </div>
-            {
-              isHardhatProject &&
-              <div className="mt-3 remixui_compilerConfig custom-control custom-checkbox">
-                <input className="remixui_autocompile custom-control-input" onChange={updatehhCompilation} id="enableHardhat" type="checkbox" title="Enable Hardhat Compilation" checked={hhCompilation} />
-                <label className="form-check-label custom-control-label" htmlFor="enableHardhat">Enable Hardhat Compilation</label>
-                <a className="mt-1 text-nowrap" href='https://remix-ide.readthedocs.io/en/latest/hardhat.html#enable-hardhat-compilation' target={'_blank'}>
-                  <OverlayTrigger placement={'right'} overlay={
-                    <Tooltip className="text-nowrap" id="overlay-tooltip">
-                      <span className="p-1 pr-3" style={{ backgroundColor: 'black', minWidth: '230px' }}>Learn how to use Hardhat Compilation</span>
-                    </Tooltip>
-                  }>
-                    <i style={{ fontSize: 'medium' }} className={'ml-2 fal fa-info-circle'} aria-hidden="true"></i>
-                  </OverlayTrigger>
-                </a>
-              </div>
-            }
           </div>
-          <div className="pl-0 d-flex remixui_compilerConfig custom-control custom-checkbox" onClick={toggleConfigType}>
-            <input type="radio" value="file" checked={!manualConfig} name="configType" />
-            <label className="font-weight-bold ml-1 remixui_compilerLabel">Use configuration file</label>
+          <label className="font-weight-bold ml-1 mt-3 remixui_compilerLabel">Plugin settings</label>
+          <div className="mt-2 remixui_compilerConfig custom-control custom-checkbox">
+            <input className="remixui_autocompile custom-control-input" type="checkbox" onChange={handleAutoCompile} data-id="compilerContainerAutoCompile" id="autoCompile" title="Auto compile" checked={state.autoCompile} />
+            <label className="form-check-label custom-control-label" htmlFor="autoCompile">Auto compile</label>
           </div>
-          <div className={`pt-2 ml-3 align-items-start flex-column ${!manualConfig ? 'd-flex' : 'd-none'}`}>
-            { !showFilePathInput && <span>{configFilePath}</span> }
-              { showFilePathInput && <input
-                ref={configFilePathInput}
-                placeholder={"Enter new path"}
-                onKeyPress={event => {
-                  if (event.key === 'Enter') {
-                    handleConfigPathChange()
-                  }
-                }}
-              /> }
-              { !showFilePathInput && <button className="mt-2 btn-secondary" onClick={() => {setShowFilePathInput(true)}}>Set new config file</button> }
+          <div className="mt-1 mb-2 remixui_compilerConfig custom-control custom-checkbox">
+            <input className="remixui_autocompile custom-control-input" onChange={handleHideWarningsChange} id="hideWarningsBox" type="checkbox" title="Hide warnings" checked={state.hideWarnings} />
+            <label className="form-check-label custom-control-label" htmlFor="hideWarningsBox">Hide warnings</label>
           </div>
-          <button id="compileBtn" data-id="compilerContainerCompileBtn" className="btn btn-primary btn-block remixui_disabled mt-3" title="Compile" onClick={compile} disabled={disableCompileButton}>
-            <span>
+          {
+            isHardhatProject &&
+            <div className="mt-3 remixui_compilerConfig custom-control custom-checkbox">
+              <input className="remixui_autocompile custom-control-input" onChange={updatehhCompilation} id="enableHardhat" type="checkbox" title="Enable Hardhat Compilation" checked={hhCompilation} />
+              <label className="form-check-label custom-control-label" htmlFor="enableHardhat">Enable Hardhat Compilation</label>
+              <a className="mt-1 text-nowrap" href='https://remix-ide.readthedocs.io/en/latest/hardhat.html#enable-hardhat-compilation' target={'_blank'}>
+                <OverlayTrigger placement={'right'} overlay={
+                  <Tooltip className="text-nowrap" id="overlay-tooltip">
+                    <span className="p-1 pr-3" style={{ backgroundColor: 'black', minWidth: '230px' }}>Learn how to use Hardhat Compilation</span>
+                  </Tooltip>
+                }>
+                  <i style={{ fontSize: 'medium' }} className={'ml-2 fal fa-info-circle'} aria-hidden="true"></i>
+                </OverlayTrigger>
+              </a>
+            </div>
+          }
+          <button
+            id="compileBtn"
+            data-id="compilerContainerCompileBtn"
+            className="btn btn-primary btn-block remixui_disabled mt-3"
+            title="Compile"
+            onClick={compile}
+            disabled={disableCompileButton}
+          >
+
+          </button>
+          <span>
               { <i ref={compileIcon} className="fas fa-sync remixui_iconbtn" aria-hidden="true"></i> }
               Compile { typeof state.compiledFileName === 'string' ? extractNameFromKey(state.compiledFileName) || '<no file selected>' : '<no file selected>' }
             </span>
-          </button>
         </header>
       </article>
     </section>
