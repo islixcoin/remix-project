@@ -243,6 +243,7 @@ export function RunTabUI (props: RunTabProps) {
             loadAddress={loadAddress}
             networkName={runTab.networkName}
             setNetworkName={setNetworkNameFromProvider}
+            deployOptions={runTab.deployOptions}
           />
           <RecorderUI
             gasEstimationPrompt={gasEstimationPrompt}
