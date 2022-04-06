@@ -90,6 +90,7 @@ export const CompilerContainer = (props: CompilerContainerProps) => {
         const autocompile = await api.getAppParameter('autoCompile') as boolean || false
         const hideWarnings = await api.getAppParameter('hideWarnings') as boolean || false
         const includeNightlies = await api.getAppParameter('includeNightlies') as boolean || false
+
         setState(prevState => {
           const params = api.getCompilerParameters()
           const optimize = params.optimize
@@ -184,7 +185,7 @@ export const CompilerContainer = (props: CompilerContainerProps) => {
         setConfigFilePath(configFilePathInput.current.value)
       else {
         modal(
-          'New configuration file', `The file "${configFilePathInput.current.value}"" you entered does not exist. Do you want to create a new one?`,
+          'New configuration file', `The file "${configFilePathInput.current.value}" you entered does not exist. Do you want to create a new one?`,
           'Create',
           async () => await createNewConfigFile(),
           'Cancel',

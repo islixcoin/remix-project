@@ -55,5 +55,7 @@ export interface ConfigurationSettings {
     evmVersion: string,
     language: string,
     optimize: boolean,
-    runs: string
+    runs: string,
+    useFileConfiguration: boolean,
+    configFilePath: string
 }
